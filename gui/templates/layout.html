@@ -48,46 +48,51 @@
 <div id="wrapper">
 
     <!-- Navigation -->
-<nav class="navbar navbar-default">
-  <div class="container-fluid">
-    <!-- Brand and toggle get grouped for better mobile display -->
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="#">LDAP Manager</a>
-    </div>
-
-    <!-- Collect the nav links, forms, and other content for toggling -->
-    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <li class="{% block show_active %}{% endblock %}"><a href="#">Show Profile <span class="sr-only">(current)</span></a></li>
-        <li class="{% block create_active %}{% endblock %}"><a href="#">Create Profile</a></li>
-      </ul>
-
-    {% if not loggedin %}
-          <form class="navbar-form navbar-right" role="search">
-            <div class="form-group">
-              <input type="text" class="form-control" placeholder="Username" required="">
-                <input type="password" class="form-control" placeholder="Password" required="">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">LDAP Manager</a>
             </div>
-            <button type="submit" class="btn btn-default">Login</button>
-          </form>
-    {% else %}
-        <div class="pull-right" style="padding-top: 15px;">
-            <span>Logged in</span>, &nbsp;<a href="#">Logout</a>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li class="{% block show_active %}{% endblock %}"><a href="#">Show Profile <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="{% block create_active %}{% endblock %}"><a href="#">Create Profile</a></li>
+                </ul>
+
+                <div id="loggedout">
+                    <form class="navbar-form navbar-right" role="search" id="auth_form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Username" id="username" required>
+                            <input type="password" class="form-control" placeholder="Password" id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-default">Authenticate</button>
+                    </form>
+
+                </div>
+                <div id="loggedin">
+                    <div class="pull-right" style="padding-top: 15px;">
+                        <span class="label label-info">Logged in</span>
+                    </div>
+
+                </div>
+
+
+            </div>
+            <!-- /.navbar-collapse -->
         </div>
-
-    {% endif %}
-
-
-
-    </div><!-- /.navbar-collapse -->
-  </div><!-- /.container-fluid -->
-</nav>
+        <!-- /.container-fluid -->
+    </nav>
 
     <div id="page-wrapper" class="container">
         <div class="row">
@@ -118,7 +123,39 @@
 <script src="{% static 'js/jquery.cookie.js' %}"></script>
 
 <script type="text/javascript">
+    $(document).ready(function(){
+        $("#loggedin").hide();
+        $("#loggedout").show();
+
+    });
+    $("#auth_form").submit(function(event){
+        event.preventDefault();
+
+        $.ajax({
+          method: "POST",
+          url: "{% url 'login' %}",
+          data: {
+                  username: $("#username").val(),
+                  password: $("#password").val()
+                },
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+
+            }
+        })
+      .done(function(response) {
+        if (response.success){
+            $("#loggedout").hide();
+            $("#loggedin").show();
+        } else {
+            alert(response.message);
+        }
+      });
+    });
+
+
 {% block extended_js %}{% endblock %}
+
 </script>
 
 </body>
