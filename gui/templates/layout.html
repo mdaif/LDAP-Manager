@@ -98,6 +98,7 @@
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="page-header">{% block page_header %}{% endblock %}</h1>
+                {% block main_content %}{% endblock %}
             </div>
             <!-- /.col-lg-12 -->
         </div>
@@ -123,6 +124,14 @@
 <script src="{% static 'js/jquery.cookie.js' %}"></script>
 
 <script type="text/javascript">
+    String.prototype.format = function (o) {
+        return this.replace(/{([^{}]*)}/g,
+            function (a, b) {
+                var r = o[b];
+                return typeof r === 'string' || typeof r === 'number' ? r : a;
+            }
+        );
+    };
     $(document).ready(function(){
         $("#loggedin").hide();
         $("#loggedout").show();

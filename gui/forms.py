@@ -9,3 +9,7 @@ class LoginForm(forms.Form):
         cleaned_data = super(LoginForm, self).clean()
         cleaned_data['username'] = str(cleaned_data['username'])
         cleaned_data['password'] = str(cleaned_data['password'])
+
+
+class SubscriberForm(forms.Form):
+    subscriber_id = forms.CharField(max_length=100)

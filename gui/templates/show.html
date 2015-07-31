@@ -3,3 +3,60 @@
 {% block head_title %}Show Profile{% endblock %}
 {% block show_active %}active{% endblock %}
 {% block page_header %}Show Profile{% endblock %}
+
+{% block main_content %}
+
+<form>
+  <div class="form-group" class="form-horizontal">
+    <label for="subscriber_id">Subscriber ID</label>
+
+      <div class="input-group">
+        <input type="text" class="form-control input input-md" id="subscriber_id" placeholder="Subscriber ID ...">
+          <span class="input-group-btn">
+            <button type="submit" class="btn btn-md btn-primary" id="query">Query</button>
+          </span>
+      </div>
+
+  </div>
+
+
+</form>
+<div id="profiles">
+
+</div>
+
+
+{% endblock %}
+
+{% block extended_js %}
+$("#query").click(function(event){
+    event.preventDefault();
+
+    $.ajax({
+      method: "GET",
+      url: "{% url 'query_subscriber' %}",
+      data: {
+              subscriber_id: $("#subscriber_id").val(),
+            }
+
+    })
+  .done(function(response) {
+    if (response.success){
+        console.log(response.profiles);
+        $.each(response.profiles, function(key, value) {  // iterate over profiles for that subscriber (like email, addressbook, ...etc)
+
+            var panel_html = "<div class='panel panel-primary'> <div class='panel-heading'>\
+                                <h3 class='panel-title'>{title}</h3>\
+                              </div>\
+                              <div class='panel-body'>\
+                                Panel content\
+                              </div></div>".format({title: key});
+            $("#profiles").append(panel_html);
+
+        });
+    } else {
+        alert(response.message);
+    }
+  });
+});
+{% endblock %}

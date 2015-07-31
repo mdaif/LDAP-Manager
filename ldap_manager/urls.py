@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
-from gui.views import HomePageView, LoginView
+from gui.views import HomePageView, LoginView, SubscriberView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -23,5 +23,6 @@ from django.conf.urls.static import static
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^$', HomePageView.as_view(), name='home'),
-    url(r'^login/?$', LoginView.as_view(), name='login')
+    url(r'^login/?$', LoginView.as_view(), name='login'),
+    url(r'^gui/subscriber/?$', SubscriberView.as_view(), name='query_subscriber')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
