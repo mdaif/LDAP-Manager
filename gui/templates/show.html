@@ -26,6 +26,31 @@
 
 </div>
 
+<!-- Edit Attribute Modal -->
+<div class="modal fade" id="EditAttributeModal" tabindex="-1" role="dialog" aria-labelledby="EditAttributeModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <form id="update_attribute_form">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="EditAttributeModalLabel">Update Attribute</h4>
+          </div>
+          <div class="modal-body">
+
+              <div class="form-group">
+                <label for="attribute_val" id="attribute_val_label"></label>
+                <input type="text" class="form-control" id="attribute_val" required>
+              </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Update!</button>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
 
@@ -77,8 +102,12 @@ function query_subscriber(subscriber_id){
                         {
                             "targets": 2,
                             "render": function (data, type, row) {
-                                    return "<button style='cursor: pointer' class='confirm remove-btn btn btn-danger btn-md' data-attribute='{attribute}'><span class='fa fa-close fa-md'>\
-                                  </span></button>".format({attribute: row[0]});
+                                    return "<button style='cursor: pointer' data-toggle='modal' data-target='#EditAttributeModal'\
+                                                                    title='Edit Attribute' data-attribute_key='{attribute}' data-attribute_val='{attribute_val}' \
+                                                                    class='btn btn-info btn-md'>\
+                                                                    <span class='fa fa-pencil-square-o fa-lg'></span></button>\
+                                    <button style='cursor: pointer' class='remove-btn btn btn-danger btn-md' data-attribute='{attribute}'><span class='fa fa-close fa-md'>\
+                                  </span></button>".format({attribute: row[0], attribute_val: row[1]});
 
                             }
                         },
@@ -134,5 +163,46 @@ $("#profiles").on("click", ".remove-btn", function(){
 
 }
 
+});
+
+$('#EditAttributeModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget); // Button that triggered the modal
+    var attribute_key = button.data('attribute_key');
+    var attribute_val = button.data('attribute_val');
+    $("#attribute_val_label").html(attribute_key);
+    $("#attribute_val").val(attribute_val);
+
+
+});
+
+$("#update_attribute_form").submit(function(event){
+    event.preventDefault();
+    var profile_attribute = $("#attribute_val_label").html();
+    var subscriber_id = $("#subscriber_id_cache").val();
+    var profile_attributes_url = "{% url 'profile_attributes' 'attr1' 'attr2' %}"
+    profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id).replace('attr2', profile_attribute);
+    var attribute_val = $("#attribute_val").val();
+    $.ajax({
+    method: "PUT",
+    url: profile_attributes_url,
+    data: {
+    attribute_val: attribute_val,
+    },
+    beforeSend: function(xhr, settings) {
+    xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+    }
+
+    })
+    .done(function(response) {
+        if (response.success){
+            $('#EditAttributeModal').modal('hide');
+            query_subscriber(subscriber_id);
+            alert("Attribute udpated!");
+        } else {
+            $('#EditAttributeModal').modal('hide');
+            alert(response.message);
+
+        }
+    });
 });
 {% endblock %}
