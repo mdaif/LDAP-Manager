@@ -14,6 +14,7 @@
         <input type="text" class="form-control input input-md" id="subscriber_id" placeholder="Subscriber ID ...">
           <span class="input-group-btn">
             <button type="submit" class="btn btn-md btn-primary" id="query">Query</button>
+            <input type="hidden" id="subscriber_id_cache">
           </span>
       </div>
 
@@ -29,34 +30,109 @@
 {% endblock %}
 
 {% block extended_js %}
-$("#query").click(function(event){
+
+function query_subscriber(subscriber_id){
     event.preventDefault();
 
     $.ajax({
       method: "GET",
       url: "{% url 'query_subscriber' %}",
       data: {
-              subscriber_id: $("#subscriber_id").val(),
+              subscriber_id: subscriber_id,
             }
 
     })
   .done(function(response) {
     if (response.success){
-        console.log(response.profiles);
+        $("#subscriber_id_cache").val($("#subscriber_id").val());
+        $('table').dataTable().fnDestroy();
+        $("#profiles").html("");
+        var cntr = 1;
         $.each(response.profiles, function(key, value) {  // iterate over profiles for that subscriber (like email, addressbook, ...etc)
 
             var panel_html = "<div class='panel panel-primary'> <div class='panel-heading'>\
                                 <h3 class='panel-title'>{title}</h3>\
                               </div>\
                               <div class='panel-body'>\
-                                Panel content\
-                              </div></div>".format({title: key});
+                                <table cellpadding='0' cellspacing='0' border='0' class='display' id='example{cntr}'></table>\
+                              </div></div>".format({title: key, cntr: cntr});
+
+            var table_data = [];
+            $.each(value, function(key2, value2) {
+                table_data.push([key2, value2.join()]);
+
+            });
+
             $("#profiles").append(panel_html);
+
+
+            $('#example' + cntr).dataTable( {
+                "data": table_data,
+                "columns": [
+                    { "title": "Attribute" },
+                    { "title": "Value" },
+                    { "title": "Options" }
+                ],
+                    "columnDefs": [
+                        {
+                            "targets": 2,
+                            "render": function (data, type, row) {
+                                    return "<button style='cursor: pointer' class='confirm remove-btn btn btn-danger btn-md' data-attribute='{attribute}'><span class='fa fa-close fa-md'>\
+                                  </span></button>".format({attribute: row[0]});
+
+                            }
+                        },
+
+                    ]
+
+
+            } );
+
+            cntr ++;
 
         });
     } else {
         alert(response.message);
     }
   });
+}
+$("#query").click(function(event){
+    query_subscriber($("#subscriber_id").val());
+});
+
+
+
+$("#profiles").on("click", ".remove-btn", function(){
+    var profile_attribute = $(this).data('attribute');
+    var subscriber_id = $("#subscriber_id_cache").val();
+    var profile_attributes_url = "{% url 'profile_attributes' 'attr1' 'attr2' %}"
+
+    profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id).replace('attr2', profile_attribute);
+
+    var confirmed = confirm("Are you sure you want to delete this attribute ?");
+    if (confirmed) {
+
+        $.ajax({
+        method: "DELETE",
+        url: profile_attributes_url,
+        data: {
+        subscriber_id: $("#subscriber_id").val(),
+        },
+        beforeSend: function(xhr, settings) {
+        xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
+
+        })
+        .done(function(response) {
+            if (response.success){
+                alert("Attribute deleted !");
+                query_subscriber(subscriber_id);
+            } else {
+                alert(response.message);
+            }
+        });
+
+}
+
 });
 {% endblock %}

@@ -41,9 +41,23 @@ class SubscriberView(View):
         connection = ldap.initialize('ldap://127.0.0.1:389')
         connection.simple_bind_s(username, password)
         ldap_profiles = connection.search_s('o=TE Data,c=EG', ldap.SCOPE_SUBTREE, '(uid=%s)' % form.cleaned_data['subscriber_id'])
-        dictified = {}
-        for profile in ldap_profiles:
-            dictified[profile[0]] = profile[1]
-
+        connection.unbind_s()
+        dictified = {profile[0]: profile[1] for profile in ldap_profiles}
         return HttpResponse(json.dumps({'success': True, 'profiles': dictified}), content_type="application/json", status=200)
+
+
+class ProfileAttributeView(View):
+    @handle_ldap_errors
+    def delete(self, request, *args, **kwargs):
+        mod_attrs = [(ldap.MOD_DELETE, kwargs['attribute'], [])]
+        dn = "uid={0}, ou=tedata.net.eg,ou=corporate,ou=email,o=TE Data,c=eg".format(kwargs['subscriber_id'])
+        connection = ldap.initialize('ldap://127.0.0.1:389')
+        username, password = request.session['credentials']
+        connection.simple_bind_s(username, password)
+        try:
+            connection.modify_s(dn, mod_attrs)
+        except ldap.NOT_ALLOWED_ON_RDN:
+            return HttpResponse(json.dumps({'success': False, 'message': "Attribute deletion is not allowed"}), content_type="application/json", status=200)
+        connection.unbind_s()
+        return HttpResponse(json.dumps({'success': True}), content_type="application/json", status=200)
 
