@@ -80,6 +80,18 @@ function query_subscriber(subscriber_id){
                               </div>\
                               <div class='panel-body'>\
                                 <table cellpadding='0' cellspacing='0' border='0' class='display' id='example{cntr}'></table>\
+                            <form class='form-inline' class='new_attr_form'>\
+                              <div class='form-group'>\
+                                <label for='new_attribute_key{cntr}'>Attribute Name</label>\
+                                <input type='text' class='form-control new_attribute_key' id='new_attribute_key{cntr}' placeholder='radiusFramedRoute'>\
+                              </div>\
+                              <div class='form-group'>\
+                                <label for='new_attribute_value{cntr}'>Attribute Value</label>\
+                                <input type='text' class='form-control new_attribute_value' id='new_attribute_value{cntr}' placeholder='4.2.2.2'>\
+                              </div>\
+                              <input type='hidden' value='{title}' class='dn'>\
+                              <button class='btn btn-success add_attribute'>Add Attribute</button>\
+                            </form>\
                               </div></div>".format({title: key, cntr: cntr});
 
             var table_data = [];
@@ -205,4 +217,38 @@ $("#update_attribute_form").submit(function(event){
         }
     });
 });
+
+
+$("#profiles").on('click', '.add_attribute', function(event){
+    event.preventDefault();
+    var attribute_key = $(this).parent().find(".new_attribute_key").first().val();
+    var attribute_val = $(this).parent().find(".new_attribute_value").first().val();
+    var dn = $(this).parent().find(".dn").first().val();
+
+    var subscriber_id = $("#subscriber_id_cache").val();
+    var profile_attributes_url = "{% url 'profile_attributes_creation' 'attr1' %}"
+    profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id);
+
+    $.ajax({
+    method: "POST",
+    url: profile_attributes_url,
+    data: {
+        dn: dn, attribute_key: attribute_key, attribute_val: attribute_val
+    },
+    beforeSend: function(xhr, settings) {
+    xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+    }
+
+    })
+    .done(function(response) {
+        if (response.success){
+            query_subscriber(subscriber_id);
+            alert("Attribute added!");
+        } else {
+            alert(response.message);
+
+        }
+    });
+});
+
 {% endblock %}

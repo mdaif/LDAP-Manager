@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from forms import LoginForm, SubscriberForm
 from helpers import handle_ldap_errors
 from django.http import QueryDict
+from ldap import modlist
 import json
 import ldap
 
@@ -72,3 +73,23 @@ class ProfileAttributeView(View):
         params = QueryDict(request.body)
         mod_attrs = [(ldap.MOD_REPLACE, kwargs['attribute'], [params['attribute_val'].encode('utf-8').strip()])]
         return self._change_ldap_profile(request, kwargs['subscriber_id'], mod_attrs, "Attribute updating is not allowed")
+
+
+class ProfileAttributeCreateView(View):
+    @handle_ldap_errors
+    def post(self, request, *args, **kwargs):
+        dn = request.POST['dn']
+        attribute_key = request.POST['attribute_key']
+        attribute_value = request.POST['attribute_val'].encode('utf-8').strip()
+        #subscriber_id = kwargs['subscriber_id']
+        connection = ldap.initialize('ldap://127.0.0.1:389')
+        username, password = request.session['credentials']
+        connection.simple_bind_s(username, password)
+        mod_attrs = [(ldap.MOD_ADD, attribute_key, attribute_value)]
+        try:
+            connection.modify_s(dn, mod_attrs)
+        except (ldap.NOT_ALLOWED_ON_RDN, ldap.OBJECT_CLASS_VIOLATION):
+            return HttpResponse(json.dumps({'success': False, 'message': "Attribute adding is not allowed"}), content_type="application/json", status=200)
+        connection.unbind_s()
+        return HttpResponse(json.dumps({'success': True}), content_type="application/json", status=200)
+
