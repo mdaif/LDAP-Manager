@@ -56,7 +56,7 @@ class ProfileAttributeView(View):
         connection.simple_bind_s(username, password)
         try:
             connection.modify_s(dn, mod_attrs)
-        except ldap.NOT_ALLOWED_ON_RDN:
+        except (ldap.NOT_ALLOWED_ON_RDN, ldap.OBJECT_CLASS_VIOLATION):
             return HttpResponse(json.dumps({'success': False, 'message': not_allowed_msg}), content_type="application/json", status=200)
         connection.unbind_s()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json", status=200)
