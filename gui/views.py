@@ -2,7 +2,7 @@ from django.views.generic.base import TemplateView
 from django.views.generic import View
 from django.http import HttpResponse
 from forms import LoginForm, SubscriberForm
-from helpers import handle_ldap_errors
+from helpers import handle_ldap_errors, handle_credentials_errors
 from django.http import QueryDict
 from ldap import modlist
 import json
@@ -34,6 +34,7 @@ class LoginView(View):
 
 class SubscriberView(View):
     @handle_ldap_errors
+    @handle_credentials_errors
     def get(self, request, *args, **kwargs):
         form = SubscriberForm(request.GET)
         if not form.is_valid():
@@ -63,12 +64,14 @@ class ProfileAttributeView(View):
         return HttpResponse(json.dumps({'success': True}), content_type="application/json", status=200)
 
     @handle_ldap_errors
+    @handle_credentials_errors
     def delete(self, request, *args, **kwargs):
         mod_attrs = [(ldap.MOD_DELETE, kwargs['attribute'], [])]
         return self._change_ldap_profile(request, kwargs['subscriber_id'], mod_attrs, "Attribute deletion is not allowed")
 
 
     @handle_ldap_errors
+    @handle_credentials_errors
     def put(self, request, *args, **kwargs):
         params = QueryDict(request.body)
         mod_attrs = [(ldap.MOD_REPLACE, kwargs['attribute'], [params['attribute_val'].encode('utf-8').strip()])]
@@ -77,6 +80,7 @@ class ProfileAttributeView(View):
 
 class ProfileAttributeCreateView(View):
     @handle_ldap_errors
+    @handle_credentials_errors
     def post(self, request, *args, **kwargs):
         dn = request.POST['dn']
         attribute_key = request.POST['attribute_key']

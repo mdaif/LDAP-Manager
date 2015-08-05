@@ -120,28 +120,27 @@ function query_subscriber(subscriber_id){
                                                                     <span class='fa fa-pencil-square-o fa-lg'></span></button>\
                                     <button style='cursor: pointer' class='remove-btn btn btn-danger btn-md' data-attribute='{attribute}'><span class='fa fa-close fa-md'>\
                                   </span></button>".format({attribute: row[0], attribute_val: row[1]});
-
                             }
                         },
-
                     ]
-
-
             } );
-
             cntr ++;
-
         });
-    } else {
+    }
+    else if (! response.success && response.auth_error){
+        alert(response.message);
+        $("#loggedout").show();
+        $("#loggedin").hide();
+    }
+    else {
         alert(response.message);
     }
   });
 }
+
 $("#query").click(function(event){
     query_subscriber($("#subscriber_id").val());
 });
-
-
 
 $("#profiles").on("click", ".remove-btn", function(){
     var profile_attribute = $(this).data('attribute');
@@ -168,7 +167,13 @@ $("#profiles").on("click", ".remove-btn", function(){
             if (response.success){
                 alert("Attribute deleted !");
                 query_subscriber(subscriber_id);
-            } else {
+            }
+            else if (! response.success && response.auth_error){
+                alert(response.message);
+                $("#loggedout").show();
+                $("#loggedin").hide();
+            }
+            else {
                 alert(response.message);
             }
         });
@@ -195,14 +200,14 @@ $("#update_attribute_form").submit(function(event){
     profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id).replace('attr2', profile_attribute);
     var attribute_val = $("#attribute_val").val();
     $.ajax({
-    method: "PUT",
-    url: profile_attributes_url,
-    data: {
-    attribute_val: attribute_val,
-    },
-    beforeSend: function(xhr, settings) {
-    xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
-    }
+        method: "PUT",
+        url: profile_attributes_url,
+        data: {
+            attribute_val: attribute_val,
+        },
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
 
     })
     .done(function(response) {
@@ -210,7 +215,14 @@ $("#update_attribute_form").submit(function(event){
             $('#EditAttributeModal').modal('hide');
             query_subscriber(subscriber_id);
             alert("Attribute udpated!");
-        } else {
+        }
+        else if (! response.success && response.auth_error){
+            $('#EditAttributeModal').modal('hide');
+            alert(response.message);
+            $("#loggedout").show();
+            $("#loggedin").hide();
+        }
+        else {
             $('#EditAttributeModal').modal('hide');
             alert(response.message);
 
@@ -230,21 +242,27 @@ $("#profiles").on('click', '.add_attribute', function(event){
     profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id);
 
     $.ajax({
-    method: "POST",
-    url: profile_attributes_url,
-    data: {
-        dn: dn, attribute_key: attribute_key, attribute_val: attribute_val
-    },
-    beforeSend: function(xhr, settings) {
-    xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
-    }
+        method: "POST",
+        url: profile_attributes_url,
+        data: {
+            dn: dn, attribute_key: attribute_key, attribute_val: attribute_val
+        },
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
 
     })
     .done(function(response) {
         if (response.success){
             query_subscriber(subscriber_id);
             alert("Attribute added!");
-        } else {
+        }
+        else if (! response.success && response.auth_error){
+            alert(response.message);
+            $("#loggedout").show();
+            $("#loggedin").hide();
+        }
+        else {
             alert(response.message);
 
         }
