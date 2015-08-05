@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^$', HomePageView.as_view(), name='home'),
     url(r'^login/?$', LoginView.as_view(), name='login'),
+    url(r'^logout/?$', LoginView.as_view(), name='logout'),
     url(r'^gui/subscriber/?$', SubscriberView.as_view(), name='query_subscriber'),
     url(r'^gui/subscribers/(?P<subscriber_id>.+)/attributes/?$', ProfileAttributeCreateView.as_view(),
         name='profile_attributes_creation'),

@@ -62,7 +62,7 @@
 
                 <div id="loggedout">
                     <form class="navbar-form navbar-right" role="search" id="auth_form">
-                        <div class="form-group">
+                        <div class="form-group ">
                             <input type="text" placeholder="host" class="form-control" id="host_address" required>
                             <input type="number" placeholder="port" class="form-control" id="port_number" required>
                             <input type="text" class="form-control" placeholder="Username" id="username" required>
@@ -74,7 +74,7 @@
                 </div>
                 <div id="loggedin">
                     <div class="pull-right" style="padding-top: 15px;">
-                        <span class="label label-info">Logged in</span>
+                        <a href="{% url 'logout' %}" id="logout">Logout</a>
                     </div>
 
                 </div>
@@ -156,7 +156,24 @@
       });
     });
 
+$("#logout").click(function(event){
+    event.preventDefault();
 
+    $.ajax({
+        method: "DELETE",
+        url: "{% url 'logout' %}",
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
+    })
+  .done(function(response) {
+    if (response.success){
+        location.reload();
+    } else {
+        alert(response.message);
+    }
+  });
+});
 {% block extended_js %}{% endblock %}
 
 </script>

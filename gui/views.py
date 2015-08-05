@@ -33,6 +33,15 @@ class LoginView(View):
         connection.unbind_s()
         return HttpResponse(json.dumps({'success': True}), content_type='application/json', status=200)
 
+    @handle_ldap_errors
+    def delete(self, request, *args, **kwargs):
+        del request.session['credentials']
+        del request.session['host_address']
+        del request.session['port_number']
+        request.session.flush()
+        response = HttpResponse(json.dumps({'success': True}), content_type='application/json', status=200)
+
+        return response
 
 class SubscriberView(View):
     @handle_ldap_errors
