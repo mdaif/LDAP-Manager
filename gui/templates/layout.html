@@ -58,12 +58,13 @@
                 <ul class="nav navbar-nav">
                     <li class="{% block show_active %}{% endblock %}"><a href="#">Show Profile <span class="sr-only">(current)</span></a>
                     </li>
-                    <li class="{% block create_active %}{% endblock %}"><a href="#">Create Profile</a></li>
                 </ul>
 
                 <div id="loggedout">
                     <form class="navbar-form navbar-right" role="search" id="auth_form">
                         <div class="form-group">
+                            <input type="text" placeholder="host" class="form-control" id="host_address" required>
+                            <input type="number" placeholder="port" class="form-control" id="port_number" required>
                             <input type="text" class="form-control" placeholder="Username" id="username" required>
                             <input type="password" class="form-control" placeholder="Password" id="password" required>
                         </div>
@@ -118,8 +119,14 @@
         );
     };
     $(document).ready(function(){
-        $("#loggedin").hide();
-        $("#loggedout").show();
+
+        if ($.cookie('sessionid') !== undefined){
+            $("#loggedin").show();
+            $("#loggedout").hide();
+        } else {
+            $("#loggedin").hide();
+            $("#loggedout").show();
+        }
 
     });
     $("#auth_form").submit(function(event){
@@ -129,6 +136,8 @@
           method: "POST",
           url: "{% url 'login' %}",
           data: {
+                  host_address: $("#host_address").val(),
+                  port_number: $("#port_number").val(),
                   username: $("#username").val(),
                   password: $("#password").val()
                 },
