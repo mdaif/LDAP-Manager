@@ -120,14 +120,18 @@
     };
 
     function formatErrorMessage(response){
-        var msg = "";
-        $.each(response.message, function(key, value){
-            msg += key + ": \n";
-            $.each(value, function(index, error){
-                msg += error + "\n";
+        if (response.form_error) {
+            var msg = "";
+            $.each(response.message, function(key, value){
+                msg += key + ": \n";
+                $.each(value, function(index, error){
+                    msg += error + "\n";
+                });
             });
-        });
-        return msg;
+            return msg;
+        } else {
+            return response.message;
+        }
 
     }
     $(document).ready(function(){
