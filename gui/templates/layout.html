@@ -118,6 +118,18 @@
             }
         );
     };
+
+    function formatErrorMessage(response){
+        var msg = "";
+        $.each(response.message, function(key, value){
+            msg += key + ": \n";
+            $.each(value, function(index, error){
+                msg += error + "\n";
+            });
+        });
+        return msg;
+
+    }
     $(document).ready(function(){
 
         if ($.cookie('sessionid') !== undefined){
@@ -174,6 +186,8 @@ $("#logout").click(function(event){
     }
   });
 });
+
+
 {% block extended_js %}{% endblock %}
 
 </script>

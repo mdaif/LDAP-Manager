@@ -56,6 +56,7 @@
 
 {% block extended_js %}
 
+
 function query_subscriber(subscriber_id){
     event.preventDefault();
 
@@ -128,12 +129,14 @@ function query_subscriber(subscriber_id){
         });
     }
     else if (! response.success && response.auth_error){
-        alert(response.message);
+
+        alert(formatErrorMessage(response));
         $("#loggedout").show();
         $("#loggedin").hide();
     }
     else {
-        alert(response.message);
+
+
     }
   });
 }
@@ -169,12 +172,12 @@ $("#profiles").on("click", ".remove-btn", function(){
                 query_subscriber(subscriber_id);
             }
             else if (! response.success && response.auth_error){
-                alert(response.message);
+                alert(formatErrorMessage(response));
                 $("#loggedout").show();
                 $("#loggedin").hide();
             }
             else {
-                alert(response.message);
+                alert(formatErrorMessage(response));
             }
         });
 
@@ -218,13 +221,13 @@ $("#update_attribute_form").submit(function(event){
         }
         else if (! response.success && response.auth_error){
             $('#EditAttributeModal').modal('hide');
-            alert(response.message);
+            alert(formatErrorMessage(response));
             $("#loggedout").show();
             $("#loggedin").hide();
         }
         else {
             $('#EditAttributeModal').modal('hide');
-            alert(response.message);
+            alert(formatErrorMessage(response));
 
         }
     });
@@ -258,12 +261,12 @@ $("#profiles").on('click', '.add_attribute', function(event){
             alert("Attribute added!");
         }
         else if (! response.success && response.auth_error){
-            alert(response.message);
+            alert(formatErrorMessage(response));
             $("#loggedout").show();
             $("#loggedin").hide();
         }
         else {
-            alert(response.message);
+            alert(formatErrorMessage(response));
 
         }
     });
