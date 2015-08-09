@@ -25,11 +25,14 @@ class LoginView(View):
                                             'form_error': True}),
                                 content_type="application/json", status=200)
 
-        with LdapHandler(form.cleaned_data['host_address'], form.cleaned_data['port_number'], form.cleaned_data['username'], form.cleaned_data['password']):
+        with LdapHandler(form.cleaned_data['host_address'], form.cleaned_data['port_number'],
+                         form.cleaned_data['username'], form.cleaned_data['password'],
+                         form.cleaned_data['scope_subtree']):
             request.session['username'] = form.cleaned_data['username']
             request.session['password'] = form.cleaned_data['password']
             request.session['host_address'] = form.cleaned_data['host_address']
             request.session['port_number'] = form.cleaned_data['port_number']
+            request.session['scope_subtree'] = form.cleaned_data['scope_subtree']
 
         return HttpResponse(json.dumps({'success': True}), content_type='application/json', status=200)
 
@@ -48,18 +51,20 @@ class SubscriberView(View):
                 json.dumps({'success': False, 'validation_error': True, 'message': form.errors, 'form_error': True}),
                 content_type="application/json", status=200)
 
-        with LdapHandler(request.session['host_address'], request.session['port_number'], request.session['username'], request.session['password']) as ldap_handler:
+        with LdapHandler(request.session['host_address'], request.session['port_number'], request.session['username'],
+                         request.session['password'], request.session['scope_subtree']) as ldap_handler:
             profiles = ldap_handler.search(form.cleaned_data['subscriber_id'])
             return HttpResponse(json.dumps({'success': True, 'profiles': profiles}), content_type="application/json",
                                 status=200)
 
+
 class ProfileAttributeView(View):
     def _change_ldap_profile(self, request, subscriber_id, attributes, not_allowed_msg):
-        subtree = "ou=tedata.net.eg,ou=corporate,ou=email,o=TE Data,c=eg"
-
         try:
-            with LdapHandler(request.session['host_address'], request.session['port_number'], request.session['username'], request.session['password']) as ldap_handler:
-                ldap_handler.change_profile(subscriber_id, subtree, attributes)
+            with LdapHandler(request.session['host_address'], request.session['port_number'],
+                             request.session['username'], request.session['password'],
+                             request.session['scope_subtree']) as ldap_handler:
+                ldap_handler.change_profile(subscriber_id, attributes)
 
         except (ldap.NOT_ALLOWED_ON_RDN, ldap.OBJECT_CLASS_VIOLATION):
             return HttpResponse(json.dumps({'success': False, 'message': not_allowed_msg}),
@@ -86,7 +91,8 @@ class ProfileAttributeView(View):
                 json.dumps({'success': False, 'validation_error': True, 'message': form.errors, 'form_error': True}),
                 content_type="application/json", status=200)
 
-        attributes = [(ldap.MOD_REPLACE, kwargs['attribute'], [form.cleaned_data['attribute_val'].encode('utf-8').strip()])]
+        attributes = [
+            (ldap.MOD_REPLACE, kwargs['attribute'], [form.cleaned_data['attribute_val'].encode('utf-8').strip()])]
         return self._change_ldap_profile(request, kwargs['subscriber_id'], attributes,
                                          "Attribute updating is not allowed")
 
@@ -103,7 +109,9 @@ class ProfileAttributeCreateView(View):
 
         attributes = [(ldap.MOD_ADD, form.cleaned_data['attribute_key'], form.cleaned_data['attribute_val'])]
         try:
-            with LdapHandler(request.session['host_address'], request.session['port_number'], request.session['username'], request.session['password']) as ldap_handler:
+            with LdapHandler(request.session['host_address'], request.session['port_number'],
+                             request.session['username'], request.session['password'],
+                             request.session['scope_subtree']) as ldap_handler:
                 ldap_handler.add_attribute(form.cleaned_data['dn'], attributes)
 
         except (ldap.NOT_ALLOWED_ON_RDN, ldap.OBJECT_CLASS_VIOLATION):

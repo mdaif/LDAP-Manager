@@ -9,10 +9,12 @@ def handle_ldap_errors(func):
         try:
             return func(*args, **kwargs)
         except ldap.SERVER_DOWN:
-            return HttpResponse(json.dumps({'success': False, 'message': "Can't contact ldap server"}), content_type="application/json", status=200)
+            return HttpResponse(json.dumps({'success': False, 'message': "Can't contact ldap server"}),
+                                content_type="application/json", status=200)
 
         except (ldap.INVALID_CREDENTIALS, ldap.NO_SUCH_OBJECT):
-            return HttpResponse(json.dumps({'success': False, 'message': "Invalid Credentials"}), content_type="application/json", status=200)
+            return HttpResponse(json.dumps({'success': False, 'message': "Invalid Credentials"}),
+                                content_type="application/json", status=200)
 
     return wrapper
 
@@ -34,8 +36,9 @@ class LdapHandler(object):
         connection.simple_bind_s(username, password)
         return connection
 
-    def __init__(self, host_address, port_number, username, password):
+    def __init__(self, host_address, port_number, username, password, scope_subtree):
         self.connection = self._connect(host_address, port_number, username, password)
+        self.scope_subtree = scope_subtree
 
     def __enter__(self):
         return self
@@ -44,13 +47,13 @@ class LdapHandler(object):
         self.connection.unbind_s()
 
     def search(self, subscriber_id):
-        ldap_profiles = self.connection.search_s('o=TE Data,c=EG', ldap.SCOPE_SUBTREE,
-                                            '(uid=%s)' % subscriber_id)
+        ldap_profiles = self.connection.search_s(self.scope_subtree, ldap.SCOPE_SUBTREE,
+                                                 '(uid=%s)' % subscriber_id)
 
         return {profile[0]: profile[1] for profile in ldap_profiles}
 
-    def change_profile(self, subscriber_id, subtree, attributes):
-        dn = "uid={0},{1}".format(subscriber_id, subtree)
+    def change_profile(self, subscriber_id, attributes):
+        dn = "uid={0},{1}".format(subscriber_id, self.scope_subtree)
         self.connection.modify_s(dn, attributes)
 
     def add_attribute(self, dn, attributes):

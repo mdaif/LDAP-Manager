@@ -10,12 +10,18 @@ class LoginForm(forms.Form):
     password = forms.CharField(max_length=100)
     host_address = forms.CharField(max_length=100)
     port_number = forms.IntegerField()
+    scope_subtree = forms.CharField(max_length=200)
 
     def clean(self):
         cleaned_data = super(LoginForm, self).clean()
-        cleaned_data['username'] = _encode_utf8(cleaned_data['username'])
-        cleaned_data['password'] = _encode_utf8(cleaned_data['password'])
-        cleaned_data['host_address'] = _encode_utf8(cleaned_data['host_address'])
+        if 'username' in cleaned_data:
+            cleaned_data['username'] = _encode_utf8(cleaned_data['username'])
+        if 'password' in cleaned_data:
+            cleaned_data['password'] = _encode_utf8(cleaned_data['password'])
+        if 'host_address' in cleaned_data:
+            cleaned_data['host_address'] = _encode_utf8(cleaned_data['host_address'])
+        if 'scope_subtree' in cleaned_data:
+            cleaned_data['scope_subtree'] = _encode_utf8(cleaned_data['scope_subtree'])
 
 
 class SubscriberForm(forms.Form):

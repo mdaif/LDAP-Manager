@@ -63,10 +63,16 @@
                 <div id="loggedout">
                     <form class="navbar-form navbar-right" role="search" id="auth_form">
                         <div class="form-group ">
-                            <input type="text" placeholder="host" class="form-control" id="host_address" required>
-                            <input type="number" placeholder="port" class="form-control" id="port_number" required>
-                            <input type="text" class="form-control" placeholder="Username" id="username" required>
-                            <input type="password" class="form-control" placeholder="Password" id="password" required>
+                            <input type="text" placeholder="Scope Subtree" class="form-control" style="width: 400px;"
+                                   id="scope_subtree" required>
+                            <input type="text" placeholder="host" class="form-control" style="width: 100px;"
+                                   id="host_address" required>
+                            <input type="number" placeholder="port" class="form-control" style="width: 70px;"
+                                   id="port_number" required>
+                            <input type="text" class="form-control" placeholder="Username" style="width: 150px;"
+                                   id="username" required>
+                            <input type="password" class="form-control" placeholder="Password" style="width: 100px;"
+                                   id="password" required>
                         </div>
                         <button type="submit" class="btn btn-default">Authenticate</button>
                     </form>
@@ -152,6 +158,7 @@
           method: "POST",
           url: "{% url 'login' %}",
           data: {
+                  scope_subtree : $("#scope_subtree").val(),
                   host_address: $("#host_address").val(),
                   port_number: $("#port_number").val(),
                   username: $("#username").val(),
@@ -167,7 +174,7 @@
             $("#loggedout").hide();
             $("#loggedin").show();
         } else {
-            alert(response.message);
+            alert(formatErrorMessage(response));
         }
       });
     });
@@ -186,13 +193,14 @@ $("#logout").click(function(event){
     if (response.success){
         location.reload();
     } else {
-        alert(response.message);
+        alert(formatErrorMessage(response));
     }
   });
 });
 
 
 {% block extended_js %}{% endblock %}
+
 
 </script>
 
