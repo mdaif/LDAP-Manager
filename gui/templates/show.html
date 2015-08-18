@@ -1,0 +1,275 @@
+{% extends "layout.html" %}
+
+{% block head_title %}Show Profile{% endblock %}
+{% block show_active %}active{% endblock %}
+{% block page_header %}Show Profile{% endblock %}
+
+{% block main_content %}
+
+<form>
+  <div class="form-group" class="form-horizontal">
+    <label for="subscriber_id">Subscriber ID</label>
+
+      <div class="input-group">
+        <input type="text" class="form-control input input-lg" id="subscriber_id" placeholder="Subscriber ID ...">
+          <span class="input-group-btn">
+            <button type="submit" class="btn btn-lg btn-info" id="query">Query</button>
+            <input type="hidden" id="subscriber_id_cache">
+          </span>
+      </div>
+
+  </div>
+
+
+</form>
+<div id="profiles">
+
+</div>
+
+<!-- Edit Attribute Modal -->
+<div class="modal fade" id="EditAttributeModal" tabindex="-1" role="dialog" aria-labelledby="EditAttributeModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <form id="update_attribute_form">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="EditAttributeModalLabel">Update Attribute</h4>
+          </div>
+          <div class="modal-body">
+
+              <div class="form-group">
+                <label for="attribute_val" id="attribute_val_label"></label>
+                <input type="text" class="form-control" id="attribute_val" required>
+              </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Update!</button>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extended_js %}
+
+
+function query_subscriber(subscriber_id){
+    event.preventDefault();
+
+    $.ajax({
+      method: "GET",
+      url: "{% url 'query_subscriber' %}",
+      data: {
+              subscriber_id: subscriber_id,
+            }
+
+    })
+  .done(function(response) {
+    if (response.success){
+        $("#subscriber_id_cache").val($("#subscriber_id").val());
+        $('table').dataTable().fnDestroy();
+        $("#profiles").html("");
+        var cntr = 1;
+        $.each(response.profiles, function(key, value) {  // iterate over profiles for that subscriber (like email, addressbook, ...etc)
+
+            var panel_html = "<div class='panel panel-primary'> <div class='panel-heading'>\
+                                <h3 class='panel-title'>{title}</h3>\
+                              </div>\
+                              <div class='panel-body'>\
+                                <table cellpadding='0' cellspacing='0' border='0' class='display' id='example{cntr}'></table>\
+                            <form class='form-inline' class='new_attr_form'>\
+                              <div class='form-group'>\
+                                <label for='new_attribute_key{cntr}'>Attribute Name</label>\
+                                <input type='text' class='form-control new_attribute_key' id='new_attribute_key{cntr}' placeholder='radiusFramedRoute'>\
+                              </div>\
+                              <div class='form-group'>\
+                                <label for='new_attribute_value{cntr}'>Attribute Value</label>\
+                                <input type='text' class='form-control new_attribute_value' id='new_attribute_value{cntr}' placeholder='4.2.2.2'>\
+                              </div>\
+                              <input type='hidden' value='{title}' class='dn'>\
+                              <button class='btn btn-success add_attribute'>Add Attribute</button>\
+                            </form>\
+                              </div></div>".format({title: key, cntr: cntr});
+
+            var table_data = [];
+            $.each(value, function(key2, value2) {
+                table_data.push([key2, value2.join()]);
+
+            });
+
+            $("#profiles").append(panel_html);
+
+
+            $('#example' + cntr).dataTable( {
+                "data": table_data,
+                "columns": [
+                    { "title": "Attribute" },
+                    { "title": "Value" },
+                    { "title": "Options" }
+                ],
+                    "columnDefs": [
+                        {
+                            "targets": 2,
+                            "render": function (data, type, row) {
+                                    return "<button style='cursor: pointer' data-toggle='modal' data-target='#EditAttributeModal'\
+                                                                    title='Edit Attribute' data-attribute_key='{attribute}' data-attribute_val='{attribute_val}' \
+                                                                    class='btn btn-info btn-md'>\
+                                                                    <span class='fa fa-pencil-square-o fa-lg'></span></button>\
+                                    <button style='cursor: pointer' class='remove-btn btn btn-danger btn-md' data-attribute='{attribute}'><span class='fa fa-close fa-md'>\
+                                  </span></button>".format({attribute: row[0], attribute_val: row[1]});
+                            }
+                        },
+                    ]
+            } );
+            cntr ++;
+        });
+    }
+    else if (! response.success && response.auth_error){
+
+        alert(formatErrorMessage(response));
+        $("#loggedout").show();
+        $("#loggedin").hide();
+    }
+    else {
+
+
+    }
+  });
+}
+
+$("#query").click(function(event){
+    query_subscriber($("#subscriber_id").val());
+});
+
+$("#profiles").on("click", ".remove-btn", function(){
+    var profile_attribute = $(this).data('attribute');
+    var subscriber_id = $("#subscriber_id_cache").val();
+    var profile_attributes_url = "{% url 'profile_attributes' 'attr1' 'attr2' %}"
+
+    profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id).replace('attr2', profile_attribute);
+
+    var confirmed = confirm("Are you sure you want to delete this attribute ?");
+    if (confirmed) {
+
+        $.ajax({
+        method: "DELETE",
+        url: profile_attributes_url,
+        data: {
+        subscriber_id: $("#subscriber_id").val(),
+        },
+        beforeSend: function(xhr, settings) {
+        xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
+
+        })
+        .done(function(response) {
+            if (response.success){
+                alert("Attribute deleted !");
+                query_subscriber(subscriber_id);
+            }
+            else if ((! response.success) && response.auth_error){
+                alert(formatErrorMessage(response));
+                $("#loggedout").show();
+                $("#loggedin").hide();
+            }
+            else {
+                alert(formatErrorMessage(response));
+            }
+        });
+
+}
+
+});
+
+$('#EditAttributeModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget); // Button that triggered the modal
+    var attribute_key = button.data('attribute_key');
+    var attribute_val = button.data('attribute_val');
+    $("#attribute_val_label").html(attribute_key);
+    $("#attribute_val").val(attribute_val);
+
+
+});
+
+$("#update_attribute_form").submit(function(event){
+    event.preventDefault();
+    var profile_attribute = $("#attribute_val_label").html();
+    var subscriber_id = $("#subscriber_id_cache").val();
+    var profile_attributes_url = "{% url 'profile_attributes' 'attr1' 'attr2' %}"
+    profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id).replace('attr2', profile_attribute);
+    var attribute_val = $("#attribute_val").val();
+    $.ajax({
+        method: "PUT",
+        url: profile_attributes_url,
+        data: {
+            attribute_val: attribute_val,
+        },
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
+
+    })
+    .done(function(response) {
+        if (response.success){
+            $('#EditAttributeModal').modal('hide');
+            query_subscriber(subscriber_id);
+            alert("Attribute udpated!");
+        }
+        else if (! response.success && response.auth_error){
+            $('#EditAttributeModal').modal('hide');
+            alert(formatErrorMessage(response));
+            $("#loggedout").show();
+            $("#loggedin").hide();
+        }
+        else {
+            $('#EditAttributeModal').modal('hide');
+            alert(formatErrorMessage(response));
+
+        }
+    });
+});
+
+
+$("#profiles").on('click', '.add_attribute', function(event){
+    event.preventDefault();
+    var attribute_key = $(this).parent().find(".new_attribute_key").first().val();
+    var attribute_val = $(this).parent().find(".new_attribute_value").first().val();
+    var dn = $(this).parent().find(".dn").first().val();
+
+    var subscriber_id = $("#subscriber_id_cache").val();
+    var profile_attributes_url = "{% url 'profile_attributes_creation' 'attr1' %}"
+    profile_attributes_url = profile_attributes_url.replace('attr1', subscriber_id);
+
+    $.ajax({
+        method: "POST",
+        url: profile_attributes_url,
+        data: {
+            dn: dn, attribute_key: attribute_key, attribute_val: attribute_val
+        },
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
+
+    })
+    .done(function(response) {
+        if (response.success){
+            query_subscriber(subscriber_id);
+            alert("Attribute added!");
+        }
+        else if (! response.success && response.auth_error){
+            alert(formatErrorMessage(response));
+            $("#loggedout").show();
+            $("#loggedin").hide();
+        }
+        else {
+            alert(formatErrorMessage(response));
+
+        }
+    });
+});
+
+{% endblock %}

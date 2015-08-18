@@ -1,0 +1,210 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{% block head_title %}{% endblock %}</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.7/css/jquery.dataTables.min.css">
+
+
+    <!-- Custom Fonts -->
+    <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+<div id="wrapper">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">LDAP Manager</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li class="{% block show_active %}{% endblock %}"><a href="#">Show Profile <span class="sr-only">(current)</span></a>
+                    </li>
+                </ul>
+
+                <div id="loggedout">
+                    <form class="navbar-form navbar-right" role="search" id="auth_form">
+                        <div class="form-group ">
+                            <input type="text" placeholder="Scope Subtree" class="form-control" style="width: 400px;"
+                                   id="scope_subtree" required>
+                            <input type="text" placeholder="host" class="form-control" style="width: 100px;"
+                                   id="host_address" required>
+                            <input type="number" placeholder="port" class="form-control" style="width: 70px;"
+                                   id="port_number" required>
+                            <input type="text" class="form-control" placeholder="Username" style="width: 150px;"
+                                   id="username" required>
+                            <input type="password" class="form-control" placeholder="Password" style="width: 100px;"
+                                   id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-default">Authenticate</button>
+                    </form>
+
+                </div>
+                <div id="loggedin">
+                    <div class="pull-right" style="padding-top: 15px;">
+                        <a href="{% url 'logout' %}" id="logout">Logout</a>
+                    </div>
+
+                </div>
+
+
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container-fluid -->
+    </nav>
+
+    <div id="page-wrapper" class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% block page_header %}{% endblock %}</h1>
+                {% block main_content %}{% endblock %}
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+    </div>
+
+    <!-- /#page-wrapper -->
+
+</div>
+<!-- /#wrapper -->
+
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
+
+<script src="{% static 'js/jquery.cookie.js' %}"></script>
+<script src="{% static 'js/jquery.confirm.min.js' %}"></script>
+
+<script type="text/javascript">
+    String.prototype.format = function (o) {
+        return this.replace(/{([^{}]*)}/g,
+            function (a, b) {
+                var r = o[b];
+                return typeof r === 'string' || typeof r === 'number' ? r : a;
+            }
+        );
+    };
+
+    function formatErrorMessage(response){
+        if (response.form_error) {
+            var msg = "";
+            $.each(response.message, function(key, value){
+                msg += key + ": \n";
+                $.each(value, function(index, error){
+                    msg += error + "\n";
+                });
+            });
+            return msg;
+        } else {
+            return response.message;
+        }
+
+    }
+    $(document).ready(function(){
+
+        if ($.cookie('sessionid') !== undefined){
+            $("#loggedin").show();
+            $("#loggedout").hide();
+        } else {
+            $("#loggedin").hide();
+            $("#loggedout").show();
+        }
+
+    });
+    $("#auth_form").submit(function(event){
+        event.preventDefault();
+
+        $.ajax({
+          method: "POST",
+          url: "{% url 'login' %}",
+          data: {
+                  scope_subtree : $("#scope_subtree").val(),
+                  host_address: $("#host_address").val(),
+                  port_number: $("#port_number").val(),
+                  username: $("#username").val(),
+                  password: $("#password").val()
+                },
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+
+            }
+        })
+      .done(function(response) {
+        if (response.success){
+            $("#loggedout").hide();
+            $("#loggedin").show();
+        } else {
+            alert(formatErrorMessage(response));
+        }
+      });
+    });
+
+$("#logout").click(function(event){
+    event.preventDefault();
+
+    $.ajax({
+        method: "DELETE",
+        url: "{% url 'logout' %}",
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken') )
+        }
+    })
+  .done(function(response) {
+    if (response.success){
+        location.reload();
+    } else {
+        alert(formatErrorMessage(response));
+    }
+  });
+});
+
+
+{% block extended_js %}{% endblock %}
+
+
+</script>
+
+</body>
+
+</html>
+
