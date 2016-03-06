@@ -62,6 +62,7 @@
 
                 <div id="loggedout">
                     <form class="navbar-form navbar-right" role="search" id="auth_form">
+                        {% csrf_token %}
                         <div class="form-group ">
                             <input type="text" placeholder="Scope Subtree" class="form-control" style="width: 400px;"
                                    id="scope_subtree" required>
